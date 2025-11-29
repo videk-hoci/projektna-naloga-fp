@@ -1,5 +1,6 @@
 from sage.all import *
 import csv
+import ast  # Varnejša alternativa za eval
 load("graph_tools.sage")
 
 # Funkcija za pretvorbo grafa v string povezav
@@ -22,26 +23,27 @@ def save_graphs_to_csv(graphs, filename='data/grafi_oblika.csv'):
     except FileNotFoundError:
         pass
     
-    # Dodaj nove grafe
+    # Optimizacija: zberi nove grafe najprej, potem zapiši vse naenkrat
+    new_graphs = []
+    for G_data in graphs:
+        if isinstance(G_data, tuple):
+            G, ime, druzina = G_data
+        else:
+            G, ime, druzina = G_data, f"G{len(existing_graphs)}", "neznan"
+        
+        edge_string = graph_to_edge_string(G)
+        if edge_string not in existing_graphs:
+            new_graphs.append((ime, edge_string))
+            existing_graphs[edge_string] = ime
+    
+    # Zapiši vse naenkrat
     with open(filename, 'w', newline='') as f:
         writer = csv.writer(f)
         writer.writerow(['graf', 'povezave'])
         
-        # Najprej zapiši obstoječe grafe
+        # Najprej obstoječi, potem novi
         for edge_string, graf_ime in existing_graphs.items():
             writer.writerow([graf_ime, edge_string])
-        
-        # Dodaj nove grafe (če še ne obstajajo)
-        for G_data in graphs:
-            if isinstance(G_data, tuple):
-                G, ime, druzina = G_data
-            else:
-                G, ime, druzina = G_data, f"G{len(existing_graphs)}", "neznan"
-            
-            edge_string = graph_to_edge_string(G)
-            if edge_string not in existing_graphs:
-                writer.writerow([ime, edge_string])
-                existing_graphs[edge_string] = ime
     
     return existing_graphs
 
@@ -64,7 +66,7 @@ def analyze_and_save_graphs(graphs, properties_file='data/grafi.csv', graphs_fil
     except FileNotFoundError:
         pass
     
-    # Preberi VSE grafe iz grafi_oblika.csv za računanje manjkajočih lastnosti
+    # Preberi VSE grafe iz grafi_oblika.csv
     all_graphs = {}
     try:
         with open(graphs_file, 'r') as f:
@@ -74,7 +76,7 @@ def analyze_and_save_graphs(graphs, properties_file='data/grafi.csv', graphs_fil
     except FileNotFoundError:
         pass
     
-    # Pripravi podatke za grafi.csv - vključi VSE grafe iz graph_mapping
+    # Pripravi podatke za grafi.csv
     results_dict = {}
     
     # Najprej dodaj vse obstoječe lastnosti
@@ -106,16 +108,18 @@ def analyze_and_save_graphs(graphs, properties_file='data/grafi.csv', graphs_fil
                 if not results_dict[graf_ime].get('druzina') or results_dict[graf_ime]['druzina'] == "neznan":
                     results_dict[graf_ime]['druzina'] = druzina
         else:
-            # Rekonstruiraj graf iz edge_string
-            edges = eval(edge_string)
+            # Rekonstruiraj graf iz edge_string - uporabi ast.literal_eval za varnost
+            edges = ast.literal_eval(edge_string)
             G = Graph(edges)
         
-        # Izračunaj lastnosti za VSE grafe, kjer manjkajo
-        if 'alpha' not in results_dict[graf_ime] or not results_dict[graf_ime].get('alpha'):
+        # Izračunaj lastnosti - optimizacija: preveri prazne in None vrednosti
+        if 'alpha' not in results_dict[graf_ime] or results_dict[graf_ime].get('alpha') in ('', None):
             results_dict[graf_ime]['alpha'] = G.independent_set(value_only=True)
-        if 'alpha_od' not in results_dict[graf_ime] or not results_dict[graf_ime].get('alpha_od'):
+        
+        if 'alpha_od' not in results_dict[graf_ime] or results_dict[graf_ime].get('alpha_od') in ('', None):
             results_dict[graf_ime]['alpha_od'] = alpha_od(G)
-        if 'alpha^2' not in results_dict[graf_ime] or not results_dict[graf_ime].get('alpha^2'):
+        
+        if 'alpha^2' not in results_dict[graf_ime] or results_dict[graf_ime].get('alpha^2') in ('', None):
             results_dict[graf_ime]['alpha^2'] = graph_power(G, 2).independent_set(value_only=True)
 
         fieldnames_set.update(results_dict[graf_ime].keys())
@@ -142,5 +146,5 @@ def analyze_and_save_graphs(graphs, properties_file='data/grafi.csv', graphs_fil
 # povezave = [(0,1),(1,2),...]
 # graphs = [(povezave, "Graph_Name", "family_name"), ]
 
-graphs = generate_graph_family(graphs.CompleteGraph, "K", "polni", 1, 20)
+graphs = generate_all_graphs_up_to_n(7)
 analyze_and_save_graphs(graphs)
