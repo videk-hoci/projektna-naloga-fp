@@ -138,7 +138,9 @@ def analyze_and_save_graphs(graphs, properties_file='data/grafi.csv', graphs_fil
 
 
 # Primer uporabe:
-graphs = generate_graph_family(graphs.CompleteGraph, "K", "polni", 1, 10)
+# Splošna oblika:
+# povezave = [(0,1),(1,2),...]
+# graphs = [(povezave, "Graph_Name", "family_name"), ]
 
-
+graphs = generate_graph_family(graphs.CompleteGraph, "K", "polni", 1, 20)
 analyze_and_save_graphs(graphs)
