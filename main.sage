@@ -10,6 +10,7 @@ def graph_to_edge_string(G):
     edges.sort()
     return str(edges)
 
+
 # Funkcija za shranjevanje grafov v CSV
 def save_graphs_to_csv(graphs, filename='data/grafi_oblika.csv'):
     """Shrani grafe v CSV format z headerjem 'graf,povezave'"""

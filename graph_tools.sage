@@ -484,7 +484,87 @@ def generate_all_graphs_with_n_vertices(n):
     
     return result
 
+def generate_random_graphs(n, count=10, probability=0.5):
+    """
+    Generira seznam naključnih grafov z n vozlišči.
+    
+    Args:
+        n: Število vozlišč
+        count: Število grafov za generiranje (privzeto 10)
+        probability: Verjetnost, da obstaja povezava med dvema vozliščema (0.0 do 1.0)
+                     Privzeto 0.5 (50% verjetnost)
+    
+    Returns:
+        Seznam tuplov (graf, ime, družina)
+    
+    Primeri:
+        # Generiraj 10 naključnih grafov z 8 vozlišči
+        graphs = generate_random_graphs(8, count=10)
+        
+        # Generiraj 5 redkih grafov (20% povezav)
+        sparse_graphs = generate_random_graphs(10, count=5, probability=0.2)
+        
+        # Generiraj 5 gostih grafov (80% povezav)
+        dense_graphs = generate_random_graphs(10, count=5, probability=0.8)
+    
+    Opomba: Vsak graf dobi unikatno ime v formatu "random_n_v_i", kjer je:
+            - n: število vozlišč
+            - i: zaporedna številka grafa
+    """
+    result = []
+    
+    for i in range(1, count + 1):
+        # Generiraj naključen graf z n vozlišči in dano verjetnostjo povezav
+        G = graphs.RandomGNP(n, probability)
+        
+        # Relabel vozlišča na števila od 0 do n-1
+        G_relabeled = G.relabel(range(G.order()), inplace=False)
+        
+        # Ustvari unikatno ime
+        ime = f"random_{n}v_{i}"
+        
+        result.append((G_relabeled, ime, "nakljucni"))
+    
+    return result
 
+def generate_random_connected_graphs(n, count=10, probability=0.5):
+    """
+    Generira seznam naključnih POVEZANIH grafov z n vozlišči.
+    
+    Args:
+        n: Število vozlišč
+        count: Število grafov za generiranje (privzeto 10)
+        probability: Verjetnost, da obstaja povezava med dvema vozliščema (0.0 do 1.0)
+                     Privzeto 0.5 (50% verjetnost)
+    
+    Returns:
+        Seznam tuplov (graf, ime, družina)
+    
+    Opomba: Funkcija poskuša generirati povezane grafe. Če po 100 poskusih ne uspe
+            generirati povezanega grafa, vrne kar zadnji poskus (ki morda ni povezan).
+    """
+    result = []
+    
+    for i in range(1, count + 1):
+        # Poskusi generirati povezan graf (max 100 poskusov)
+        attempts = 0
+        max_attempts = 100
+        
+        while attempts < max_attempts:
+            G = graphs.RandomGNP(n, probability)
+            if G.is_connected():
+                break
+            attempts += 1
+        
+        # Relabel vozlišča na števila od 0 do n-1
+        G_relabeled = G.relabel(range(G.order()), inplace=False)
+        
+        # Ustvari unikatno ime
+        ime = f"random_povezan_{n}v_{i}"
+        
+        result.append((G_relabeled, ime, "nakljucni_povezani"))
+    
+    return result
 ##########################################################    lastnosti grafov   ###########################################################
 
 def get_diameter(G):
