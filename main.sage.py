@@ -128,6 +128,42 @@ def analyze_and_save_graphs(graphs, properties_file='data/grafi.csv', graphs_fil
         if 'alpha^2' not in results_dict[graf_ime] or results_dict[graf_ime].get('alpha^2') in ('', None):
             results_dict[graf_ime]['alpha^2'] = graph_power(G, _sage_const_2 ).independent_set(value_only=True)
 
+        if "premer" not in results_dict[graf_ime] or results_dict[graf_ime].get("premer") in ('', None):
+            results_dict[graf_ime]["premer"] = get_diameter(G)
+
+        if "max_stopnja" not in results_dict[graf_ime] or results_dict[graf_ime].get("max_stopnja") in ('', None):
+            results_dict[graf_ime]["max_stopnja"] = get_max_degree(G)
+
+        if "min_stopnja" not in results_dict[graf_ime] or results_dict[graf_ime].get("min_stopnja") in ('', None):
+            results_dict[graf_ime]["min_stopnja"] = get_min_degree(G)
+        
+        if "vse_neparne" not in results_dict[graf_ime] or results_dict[graf_ime].get("vse_neparne") in ('', None):
+            results_dict[graf_ime]["vse_neparne"] = all_degrees_odd(G)
+
+        if "obseg" not in results_dict[graf_ime] or results_dict[graf_ime].get("obseg") in ('', None):
+            results_dict[graf_ime]["obseg"] = get_girth(G)
+        
+        if "radij" not in results_dict[graf_ime] or results_dict[graf_ime].get("radij") in ('', None):
+            results_dict[graf_ime]["radij"] = get_radius(G)
+
+        if "dvodelen" not in results_dict[graf_ime] or results_dict[graf_ime].get("dvodelen") in ('', None):
+            results_dict[graf_ime]["dvodelen"] = G.is_bipartite()
+
+        if "drevo" not in results_dict[graf_ime] or results_dict[graf_ime].get("drevo") in ('', None):
+            results_dict[graf_ime]["drevo"] = G.is_tree()
+        
+        if "gozd" not in results_dict[graf_ime] or results_dict[graf_ime].get("gozd") in ('', None):
+            results_dict[graf_ime]["gozd"] = G.is_forest()
+        
+        if "Eulerjev" not in results_dict[graf_ime] or results_dict[graf_ime].get("Eulerjev") in ('', None):
+            results_dict[graf_ime]["Eulerjev"] = G.is_eulerian()
+        
+        if "kromaticno_stevilo" not in results_dict[graf_ime] or results_dict[graf_ime].get("kromaticno_stevilo") in ('', None):
+            results_dict[graf_ime]["kromaticno_stevilo"] = get_chromatic_number(G)
+        
+        if "gostota" not in results_dict[graf_ime] or results_dict[graf_ime].get("gostota") in ('', None):
+            results_dict[graf_ime]["gostota"] = get_density(G)
+
         fieldnames_set.update(results_dict[graf_ime].keys())
     
     # Pretvori dictionary v seznam

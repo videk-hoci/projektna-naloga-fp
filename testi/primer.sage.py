@@ -31,3 +31,7 @@ print("alpha(H^2) =", H_squared.independent_set(value_only=True))
 print("Povezave v H^2:", H_squared.edges(labels=False))
 print("alpha^2(G) =", graph_power(G, _sage_const_2 ).independent_set(value_only=True))
 
+predict_alfas(G)
+predict_alfas(H)
+print(G.diameter())  # Premer grafa G
+
