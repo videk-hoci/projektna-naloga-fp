@@ -1,2 +1,0 @@
-from sage.all import *
-
