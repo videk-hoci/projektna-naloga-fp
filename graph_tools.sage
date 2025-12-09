@@ -6,45 +6,6 @@ import os
 
 #########################################################    alpha_od   ###################################################################
 
-def alpha_od(G):
-    """
-    Vrne α_od(G) - velikost največje lihe neodvisne množice.
-    Deluje brute-force. Primerno za manjše grafi.
-    """
-    V = G.vertices()
-    n = len(V)
-    max_size = 0
-    
-    # Optimizacija: najprej preveri, ali je prazna množica veljavna
-    valid_empty = all(G.degree(v) == 0 for v in V) or n == 0
-    if valid_empty:
-        max_size = 0
-    
-    # preverimo vse podmnožice V
-    for r in range(1, n+1):  # Začni z 1, ne 0 (prazna množica že preverjena)
-        for subset in combinations(V, r):
-            T = set(subset)
-            
-            # Optimizacija: uporabi Graph metodo za preverjanje neodvisnosti
-            subgraph = G.subgraph(T)
-            if subgraph.size() > 0:  # Če ima povezave, ni neodvisna
-                continue
-            
-            # Preveri pogoj za vozlišča izven T
-            valid = True
-            for v in V:
-                if v not in T:
-                    # Optimizacija: uporabi generator namesto set operacije
-                    count = sum(1 for u in G.neighbors(v) if u in T)
-                    # mora biti 0 ali liho
-                    if count != 0 and count % 2 == 0:
-                        valid = False
-                        break
-            
-            if valid:
-                max_size = max(max_size, len(T))
-    
-    return max_size
 
 def alpha_od_ilp(G):
     """
@@ -52,9 +13,10 @@ def alpha_od_ilp(G):
     Uporablja Integer Linear Programming (ILP) za hitrejše računanje.
     
     Strategija:
-    1. ILP najde kandidate za neodvisne množice različnih velikosti
-    2. Python funkcija validira odd-independent pogoj
-    3. Vrne največjo veljavno množico
+    1. Za nepovezane grafe obdela vsako komponento posebej
+    2. ILP najde kandidate za neodvisne množice različnih velikosti
+    3. Python funkcija validira odd-independent pogoj
+    4. Vrne največjo veljavno množico
     
     Primerno za grafe do ~30 vozlišč (hitrejše od brute-force).
     
@@ -67,17 +29,34 @@ def alpha_od_ilp(G):
     from sage.numerical.mip import MixedIntegerLinearProgram
     
     V = list(G.vertices())
+    E = list(G.edges(labels=False))
     n = len(V)
     
-    if n == 0:
-        return 0
+    if n == 1:
+        return 1  # Graf z 1 vozliščem ima α_od = 1
     
-    # Najprej najdi maksimalno velikost neodvisne množice
+    # Specialni primer: graf brez povezav
+    if G.size() == 0:
+        return n
+    
+    # Če je graf nepovezan, obdelaj vsako komponento posebej
+    if not G.is_connected():
+        components = G.connected_components()
+        total_alpha_od = 0
+        
+        for component in components:
+            # Ustvari podgraf za to komponento
+            subgraph = G.subgraph(component)
+            # Rekurzivno izračunaj α_od za vsako komponento
+            total_alpha_od += alpha_od_ilp(subgraph)
+        
+        return total_alpha_od
+    
+    # Graf je povezan - uporabi ILP
     max_independent_size = G.independent_set(value_only=True)
     
     # Preverjaj velikosti od največje navzdol
     for target_size in range(max_independent_size, 0, -1):
-        # Poskusi najti neodvisno množico velikosti target_size
         p = MixedIntegerLinearProgram(maximization=False, solver="GLPK")
         x = p.new_variable(binary=True)
         
@@ -98,7 +77,6 @@ def alpha_od_ilp(G):
             if is_odd_independent_set(G, T):
                 return len(T)
         except:
-            # Če ILP ne najde rešitve, nadaljuj z manjšo velikostjo
             continue
     
     return 0
@@ -179,7 +157,7 @@ def graph_power(G, k):
     edges_to_add = []
     for i, u in enumerate(vertices):
         for v in vertices[i+1:]:  # Izogni se podvajanju in u == v
-            if dist[u][v] <= k:
+            if u != v and dist[u][v] <= k:  # Dodano: u != v preverjanje
                 edges_to_add.append((u, v))
     
     Gk.add_edges(edges_to_add)
@@ -327,7 +305,7 @@ def generate_star_graphs(n_start, n_end):
     """
     Generira družino zvezda grafov S_n.
     
-    Zvezda graf S_n ima en centralni vozel povezan z n zunanjimi vozlišči.
+    Zvezda graf S_n ima en centralni vozel povezan z n zunanjimi vozlišču.
     Centralno vozlišče ima stopnjo n, zunanja vozlišča imajo stopnjo 1.
     
     Args:
@@ -362,7 +340,7 @@ def generate_wheel_graphs(n_start, n_end):
     Generira družino wheel grafov W_n.
     
     Wheel graf W_n je sestavljen iz cikla C_n z dodatnim centralnim vozliščem,
-    ki je povezano z vsemi vozlišči cikla.
+    ki je povezano z vsemi vozliščmi cikla.
     
     Args:
         n_start: Začetna velikost cikla (število vozlišč v zunanjem krogu)
@@ -393,7 +371,7 @@ def generate_wheel_graphs(n_start, n_end):
 
 def generate_all_graphs_up_to_n(n_max):
     """
-    Generira vse neizomorfne grafe z do n_max vozlišči.
+    Generira vse neizomorfne grafe z do n_max vozlišč.
     
     Za vsako število vozlišč generira vse možne grafe (do izomorfizma).
     Grafi so poimenovani kot {n}_{m}_{k}, kjer je:
@@ -409,7 +387,7 @@ def generate_all_graphs_up_to_n(n_max):
     
     Primer:
         generate_all_graphs_up_to_n(4)
-        # Generira vse grafe z 1, 2, 3, 4 vozlišči
+        # Generira vse grafe z 1, 2, 3, 4 vozliščmi
         # Imena: 3_0_1, 3_1_1, 3_2_1, 3_3_1, 4_0_1, 4_1_1, ...
     
     Opomba: Število grafov raste ZELO hitro:
@@ -448,7 +426,7 @@ def generate_all_graphs_up_to_n(n_max):
 
 def generate_all_graphs_with_n_vertices(n):
     """
-    Generira vse neizomorfne grafe z natanko n vozlišči.
+    Generira vse neizomorfne grafe z natanko n vozliščmi.
     
     Args:
         n: Število vozlišč
@@ -458,7 +436,7 @@ def generate_all_graphs_with_n_vertices(n):
     
     Primer:
         generate_all_graphs_with_n_vertices(5)
-        # Generira vseh 34 grafov s 5 vozlišči
+        # Generira vseh 34 grafov s 5 vozliščmi
     """
     result = []
     
@@ -486,7 +464,7 @@ def generate_all_graphs_with_n_vertices(n):
 
 def generate_random_graphs(n, count=10, probability=0.5):
     """
-    Generira seznam naključnih grafov z n vozlišči.
+    Generira seznam naključnih grafov z n vozliščmi.
     
     Args:
         n: Število vozlišč
@@ -498,7 +476,7 @@ def generate_random_graphs(n, count=10, probability=0.5):
         Seznam tuplov (graf, ime, družina)
     
     Primeri:
-        # Generiraj 10 naključnih grafov z 8 vozlišči
+        # Generiraj 10 naključnih grafov z 8 vozliščmi
         graphs = generate_random_graphs(8, count=10)
         
         # Generiraj 5 redkih grafov (20% povezav)
@@ -514,7 +492,7 @@ def generate_random_graphs(n, count=10, probability=0.5):
     result = []
     
     for i in range(1, count + 1):
-        # Generiraj naključen graf z n vozlišči in dano verjetnostjo povezav
+        # Generiraj naključen graf z n vozliščmi in dano verjetnostjo povezav
         G = graphs.RandomGNP(n, probability)
         
         # Relabel vozlišča na števila od 0 do n-1
@@ -529,7 +507,7 @@ def generate_random_graphs(n, count=10, probability=0.5):
 
 def generate_random_connected_graphs(n, count=10, probability=0.5):
     """
-    Generira seznam naključnih POVEZANIH grafov z n vozlišči.
+    Generira seznam naključnih POVEZANIH grafov z n vozliščmi.
     
     Args:
         n: Število vozlišč
@@ -642,7 +620,7 @@ def get_girth(G):
         get_girth(G)  # Vrne inf (drevo, brez ciklov)
     """
     if G.order() <= 2:
-        return float('inf')  # Manjši grafi nimajo ciklov
+        return float('inf')  # Manjši graf nimajo ciklov
     
     if G.size() == 0:
         return float('inf')  # Graf brez povezav nima ciklov
@@ -795,12 +773,19 @@ def predict_alfas(G):
     
     Rezultati se shranijo v:
     - rezultati.csv: lastnosti in izračunane vrednosti
-    - grafi_oblika.csv: graf in povezave (list of tuples)
+    - grafi_oblika.csv: graf, vozlišča in povezave
     """
     
-    # Preveri, če graf že obstaja v bazi - primerjaj povezave
+    # Pridobi vozlišča in povezave iz grafa
+    vertices_list = list(G.vertices())
+    vertices_list.sort()
+    vertices_string = str(vertices_list)
+    
     edges_list = list(G.edges(labels=False))
     edges_string = str(edges_list)
+    
+    # Število vozlišč
+    n_vertices = G.order()
     
     # Preveri grafi_oblika.csv
     graf_exists_in_oblika = False
@@ -810,7 +795,8 @@ def predict_alfas(G):
         with open('data/grafi_oblika.csv', 'r') as f:
             reader = csv.DictReader(f)
             for row in reader:
-                if row['povezave'] == edges_string:
+                # Primerjaj vozlišča IN povezave
+                if row.get('vozlisca', '[]') == vertices_string and row['povezave'] == edges_string:
                     graf_exists_in_oblika = True
                     graf_id = row['graf']
                     print(f"Graf najden v grafi_oblika.csv z ID: {graf_id}")
@@ -890,7 +876,7 @@ def predict_alfas(G):
     if not graf_exists_in_oblika:
         file_exists = os.path.exists('data/grafi_oblika.csv')
         with open('data/grafi_oblika.csv', 'a', newline='') as f:
-            fieldnames = ['graf', 'povezave']
+            fieldnames = ['graf', 'vozlisca', 'povezave']
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             
             if not file_exists:
@@ -898,6 +884,7 @@ def predict_alfas(G):
             
             writer.writerow({
                 'graf': graf_id,
+                'vozlisca': vertices_string,
                 'povezave': edges_string
             })
     

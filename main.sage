@@ -2,6 +2,7 @@ from sage.all import *
 import csv
 import ast  # Varnejša alternativa za eval
 load("graph_tools.sage")
+load("alpha_od.sage")
 
 # Funkcija za pretvorbo grafa v string povezav
 def graph_to_edge_string(G):
@@ -10,17 +11,25 @@ def graph_to_edge_string(G):
     edges.sort()
     return str(edges)
 
+def graph_to_vertices_string(G):
+    """Pretvori vozlišča grafa v string"""
+    vertices = list(G.vertices())
+    vertices.sort()
+    return str(vertices)
+
 
 # Funkcija za shranjevanje grafov v CSV
 def save_graphs_to_csv(graphs, filename='data/grafi_oblika.csv'):
-    """Shrani grafe v CSV format z headerjem 'graf,povezave'"""
+    """Shrani grafe v CSV format z headerjem 'graf,vozlisca,povezave'"""
     # Preberi obstoječe grafe
     existing_graphs = {}
     try:
         with open(filename, 'r') as f:
             reader = csv.DictReader(f)
             for row in reader:
-                existing_graphs[row['povezave']] = row['graf']
+                # Ključ: (vozlišča, povezave)
+                key = (row.get('vozlisca', '[]'), row['povezave'])
+                existing_graphs[key] = row['graf']
     except FileNotFoundError:
         pass
     
@@ -32,19 +41,22 @@ def save_graphs_to_csv(graphs, filename='data/grafi_oblika.csv'):
         else:
             G, ime, druzina = G_data, f"G{len(existing_graphs)}", "neznan"
         
+        vertices_string = graph_to_vertices_string(G)
         edge_string = graph_to_edge_string(G)
-        if edge_string not in existing_graphs:
-            new_graphs.append((ime, edge_string))
-            existing_graphs[edge_string] = ime
+        key = (vertices_string, edge_string)
+        
+        if key not in existing_graphs:
+            new_graphs.append((ime, vertices_string, edge_string))
+            existing_graphs[key] = ime
     
     # Zapiši vse naenkrat
     with open(filename, 'w', newline='') as f:
         writer = csv.writer(f)
-        writer.writerow(['graf', 'povezave'])
+        writer.writerow(['graf', 'vozlisca', 'povezave'])
         
         # Najprej obstoječi, potem novi
-        for edge_string, graf_ime in existing_graphs.items():
-            writer.writerow([graf_ime, edge_string])
+        for (vertices_string, edge_string), graf_ime in existing_graphs.items():
+            writer.writerow([graf_ime, vertices_string, edge_string])
     
     return existing_graphs
 
@@ -52,7 +64,7 @@ def save_graphs_to_csv(graphs, filename='data/grafi_oblika.csv'):
 def analyze_and_save_graphs(graphs, properties_file='data/grafi.csv', graphs_file='data/grafi_oblika.csv'):
     """Preveri lastnosti grafov in shrani rezultate v CSV datoteke"""
     
-    # Shrani grafe in pridobi mapping (povezave -> ime)
+    # Shrani grafe in pridobi mapping ((vozlišča, povezave) -> ime)
     graph_mapping = save_graphs_to_csv(graphs, graphs_file)
     
     # Preberi obstoječe lastnosti
@@ -73,7 +85,10 @@ def analyze_and_save_graphs(graphs, properties_file='data/grafi.csv', graphs_fil
         with open(graphs_file, 'r') as f:
             reader = csv.DictReader(f)
             for row in reader:
-                all_graphs[row['graf']] = row['povezave']
+                all_graphs[row['graf']] = {
+                    'vozlisca': row.get('vozlisca', '[]'),
+                    'povezave': row['povezave']
+                }
     except FileNotFoundError:
         pass
     
@@ -93,8 +108,16 @@ def analyze_and_save_graphs(graphs, properties_file='data/grafi.csv', graphs_fil
             G, ime, druzina = G_data, "", "neznan"
         graphs_dict[ime] = (G, druzina)
     
+    total_graphs = len(all_graphs)
+    processed = 0
+    
     # Obdelaj VSE grafe iz grafi_oblika.csv
-    for graf_ime, edge_string in all_graphs.items():
+    for i, (graf_ime, graf_data) in enumerate(all_graphs.items()):
+        processed += 1
+        if processed % 10 == 0:
+            percentage = float(100 * processed) / float(total_graphs)
+            print(f"Obdelanih {processed}/{total_graphs} grafov ({percentage:.1f}%)")
+        
         # Če graf še ni v results_dict, dodaj osnovne podatke
         if graf_ime not in results_dict:
             results_dict[graf_ime] = {'graf': graf_ime, 'druzina': ''}
@@ -109,16 +132,21 @@ def analyze_and_save_graphs(graphs, properties_file='data/grafi.csv', graphs_fil
                 if not results_dict[graf_ime].get('druzina') or results_dict[graf_ime]['druzina'] == "neznan":
                     results_dict[graf_ime]['druzina'] = druzina
         else:
-            # Rekonstruiraj graf iz edge_string - uporabi ast.literal_eval za varnost
-            edges = ast.literal_eval(edge_string)
-            G = Graph(edges)
+            # Rekonstruiraj graf iz vozlišč in povezav
+            vertices = ast.literal_eval(graf_data['vozlisca'])
+            edges = ast.literal_eval(graf_data['povezave'])
+            
+            # Ustvari graf z eksplicitnimi vozlišči
+            G = Graph()
+            G.add_vertices(vertices)
+            G.add_edges(edges)
         
         # Izračunaj lastnosti - optimizacija: preveri prazne in None vrednosti
         if 'alpha' not in results_dict[graf_ime] or results_dict[graf_ime].get('alpha') in ('', None):
             results_dict[graf_ime]['alpha'] = G.independent_set(value_only=True)
         
         if 'alpha_od' not in results_dict[graf_ime] or results_dict[graf_ime].get('alpha_od') in ('', None):
-            results_dict[graf_ime]['alpha_od'] = alpha_od(G)
+            results_dict[graf_ime]['alpha_od'] = alpha_od_ilp_correct(G)
         
         if 'alpha^2' not in results_dict[graf_ime] or results_dict[graf_ime].get('alpha^2') in ('', None):
             results_dict[graf_ime]['alpha^2'] = graph_power(G, 2).independent_set(value_only=True)
@@ -161,6 +189,19 @@ def analyze_and_save_graphs(graphs, properties_file='data/grafi.csv', graphs_fil
 
         fieldnames_set.update(results_dict[graf_ime].keys())
     
+        # Shrani vsakih 50 grafov
+        if i % 50 == 0 and i > 0:
+            print(f"Shranjujem vmesne rezultate pri {i} grafih...")
+            results = list(results_dict.values())
+            fieldnames = sorted(fieldnames_set)
+            priority_fields = ['graf', 'druzina']
+            fieldnames = priority_fields + [f for f in fieldnames if f not in priority_fields]
+            
+            with open(properties_file, 'w', newline='') as f:
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(results)
+    
     # Pretvori dictionary v seznam
     results = list(results_dict.values())
     
@@ -175,7 +216,6 @@ def analyze_and_save_graphs(graphs, properties_file='data/grafi.csv', graphs_fil
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(results)
-
 
 
 # Primer uporabe:
