@@ -10,7 +10,7 @@ Kot ugotovitve bova predstavila potrebne pogoje in zadostne pogoje.
 ### Družine grafov
 #### Kneserjevi grafi KG(n,k)
 
-Po EKR za $n >= 2k$ velja $\alpha(KG(n,k)) = \binom{n-1}{k-1}$, za $n < 2k$ pa velja kar $\alpha(KG(n,k)) = \binom{n}{k}$
+Po EKR za $n\ge 2k$ velja $\alpha(KG(n,k)) = \binom{n-1}{k-1}$, za $n < 2k$ pa velja kar $\alpha(KG(n,k)) = \binom{n}{k}$
 
 **Primer (k=1):** $(KG(n,1))$
 Graf je popoln ($K_n$), zato velja:
