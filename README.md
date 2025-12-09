@@ -14,15 +14,15 @@ Po EKR velja $\alpha(KG(n,k)) = \binom{n-1}{k-1}$
 
 **Primer (k=1):** $(KG(n,1))$
 Graf je popoln ($K_n$), zato velja:
-$$
-\alpha(G) = 1, \quad \alpha_{\text{odd}}(G) = 1, \quad \alpha(G^2) = 1
-$$
+$
+ \alpha(G) = 1, \quad \alpha_{\text{odd}}(G) = 1, \quad \alpha(G^2) = 1
+$
 
 **Primer (k=n/2):** $(KG(n,n/2))$
 Vozlišča so vse $(n/2)$-podmnožice; disjunktna sta le komplementarna para, zato je graf popoln ujemalni graf (matching). S tem velja:
-  $$
-  \alpha(G) = \binom{n-1}{n/2-1}, \quad \alpha_{\text{odd}}(G) = \alpha(G), \quad \alpha(G^2) = \alpha(G)
-  $$
+  $
+   \alpha(G) = \binom{n-1}{n/2-1}, \quad \alpha_{\text{odd}}(G) = \alpha(G), \quad \alpha(G^2) = \alpha(G)
+  $
 
 
 ### Trivialni zadostni pogoji
