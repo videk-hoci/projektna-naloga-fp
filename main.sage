@@ -187,6 +187,16 @@ def analyze_and_save_graphs(graphs, properties_file='data/grafi.csv', graphs_fil
         if "gostota" not in results_dict[graf_ime] or results_dict[graf_ime].get("gostota") in ('', None):
             results_dict[graf_ime]["gostota"] = get_density(G)
 
+        if "regularen" not in results_dict[graf_ime] or results_dict[graf_ime].get("regularen") in ('', None):
+            results_dict[graf_ime]["regularen"] = G.is_regular()
+        
+        if "tricikli" not in results_dict[graf_ime] or results_dict[graf_ime].get("tricliki") in ('', None):
+            results_dict[graf_ime]["tricikli"] = count_triangles(G)
+        
+        if "stiricikli" not in results_dict[graf_ime] or results_dict[graf_ime].get("stiricikli") in ('', None):
+            results_dict[graf_ime]["stiricikli"] = count_4cycles(G)
+ 
+
         fieldnames_set.update(results_dict[graf_ime].keys())
     
         # Shrani vsakih 50 grafov

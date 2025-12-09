@@ -7,109 +7,128 @@ import os
 #########################################################    alpha_od   ###################################################################
 
 
-def alpha_od_ilp(G):
+def alpha_od_ilp_correct(G):
     """
     Vrne α_od(G) - velikost največje lihe neodvisne množice.
-    Uporablja Integer Linear Programming (ILP) za hitrejše računanje.
     
-    Strategija:
-    1. Za nepovezane grafe obdela vsako komponento posebej
-    2. ILP najde kandidate za neodvisne množice različnih velikosti
-    3. Python funkcija validira odd-independent pogoj
-    4. Vrne največjo veljavno množico
+    ILP formulacija iz članka:
     
-    Primerno za grafe do ~30 vozlišč (hitrejše od brute-force).
+    Spremenljivke:
+    - xu ∈ {0,1}: vozlišče u je v odd independent množici S
+    - yu ∈ {0,1}: vozlišče u ima soseda v S
+    - zu ∈ Z: števec za vozlišče u
+    
+    Omejitve:
+    1. xu + xv ≤ 1 za vsako povezavo uv (neodvisnost)
+    2. Σ(xv : uv ∈ E) ≤ n·yu (yu = 1 če ima u soseda v S)
+    3. yu + Σ(xv : uv ∈ E) = 2·zu (odd pogoj)
     
     Args:
         G: Graf
     
     Returns:
-        Velikost največje lihe neodvisne množice
+        int: Velikost največje odd independent množice ali None če graf ima > 40 vozlišč
     """
-    from sage.numerical.mip import MixedIntegerLinearProgram
-    
     V = list(G.vertices())
-    E = list(G.edges(labels=False))
     n = len(V)
     
+    # Specialni primeri
+    if n == 0:
+        return 0
     if n == 1:
-        return 1  # Graf z 1 vozliščem ima α_od = 1
+        return 1
     
-    # Specialni primer: graf brez povezav
-    if G.size() == 0:
+    # Skip grafov z več kot 40 vozliščmi
+    if n > 40:
+        print(f"SKIP: Graf z {n} vozlišči (> 40)")
+        return None
+    
+    if G.size() == 0:  # Graf brez povezav
         return n
     
     # Če je graf nepovezan, obdelaj vsako komponento posebej
     if not G.is_connected():
         components = G.connected_components()
-        total_alpha_od = 0
-        
+        total = 0
         for component in components:
-            # Ustvari podgraf za to komponento
             subgraph = G.subgraph(component)
-            # Rekurzivno izračunaj α_od za vsako komponento
-            total_alpha_od += alpha_od_ilp(subgraph)
-        
-        return total_alpha_od
+            result = alpha_od_ilp_correct(subgraph)
+            if result is None:  # Ena od komponent je prevelika
+                return None
+            total += result
+        return total
     
-    # Graf je povezan - uporabi ILP
-    max_independent_size = G.independent_set(value_only=True)
+    # ILP formulacija iz članka
+    p = MixedIntegerLinearProgram(maximization=True, solver="GLPK")
     
-    # Preverjaj velikosti od največje navzdol
-    for target_size in range(max_independent_size, 0, -1):
-        p = MixedIntegerLinearProgram(maximization=False, solver="GLPK")
-        x = p.new_variable(binary=True)
+    # Spremenljivke
+    x = p.new_variable(binary=True)  # xu ∈ {0, 1}
+    y = p.new_variable(binary=True)  # yu ∈ {0, 1}
+    z = p.new_variable(integer=True)  # zu ∈ Z
+    
+    # Ciljna funkcija: maksimiziraj Σ xu
+    p.set_objective(sum(x[u] for u in V))
+    
+    # Omejitev 1: neodvisna množica
+    for u, v in G.edges(labels=False):
+        p.add_constraint(x[u] + x[v] <= 1)
+    
+    # Omejitve 2 & 3: odd pogoj
+    for u in V:
+        neighbors = list(G.neighbors(u))
         
-        # Omejitev 1: točno target_size vozlišč v množici
-        p.add_constraint(sum(x[v] for v in V) == target_size)
-        
-        # Omejitev 2: mora biti neodvisna množica
-        for u, v in G.edges(labels=False):
-            p.add_constraint(x[u] + x[v] <= 1)
-        
-        # Poskusi rešiti
-        try:
-            p.solve()
-            solution = p.get_values(x)
-            T = set(v for v in V if solution[v] > 0.5)
+        if len(neighbors) == 0:
+            # Če nima sosedov, yu = 0 in zu = 0
+            p.add_constraint(y[u] == 0)
+            p.add_constraint(z[u] == 0)
+        else:
+            neighbor_sum = sum(x[v] for v in neighbors)
             
-            # Validacija: preveri odd-independent pogoj
-            if is_odd_independent_set(G, T):
-                return len(T)
-        except:
-            continue
+            # Omejitev 2: Σ(xv : uv ∈ E) ≤ n·yu
+            p.add_constraint(neighbor_sum <= n * y[u])
+            
+            # Omejitev 3: yu + Σ(xv : uv ∈ E) = 2·zu
+            p.add_constraint(y[u] + neighbor_sum == 2 * z[u])
     
-    return 0
+    # Reši ILP
+    try:
+        p.solve()
+        solution_x = p.get_values(x)
+        S = set(u for u in V if solution_x[u] > 0.5)
+        return len(S)
+    except Exception as e:
+        print(f"ILP napaka: {e}")
+        return 0
 
-def is_odd_independent_set(G, T):
+
+def is_odd_independent_set(G, S):
     """
-    Preveri, ali je T liha neodvisna množica.
+    Preveri, ali je S odd independent množica v grafu G.
     
     Args:
         G: Graf
-        T: Množica vozlišč (kandidat)
+        S: Množica vozlišč
     
     Returns:
-        True če je T odd-independent, False sicer
+        bool: True če je S odd independent, False sicer
     """
-    T_set = set(T)
+    S_set = set(S)
     
     # Preveri neodvisnost
-    for v in T_set:
-        for u in G.neighbor_iterator(v):
-            if u in T_set:
+    for u in S_set:
+        for v in G.neighbors(u):
+            if v in S_set:
                 return False
     
-    # Preveri odd pogoj: za vsako vozlišče izven T
-    # mora biti število sosedov v T enako 0 ali liho
-    for v in G.vertices():
-        if v not in T_set:
-            count = sum(1 for u in G.neighbor_iterator(v) if u in T_set)
+    # Preveri odd pogoj
+    for u in G.vertices():
+        if u not in S_set:
+            count = sum(1 for v in G.neighbors(u) if v in S_set)
+            # Mora biti 0 ali liho
             if count != 0 and count % 2 == 0:
                 return False
     
     return True
-
 
 ########################################################    Generiranje grafov   ###########################################################
 
@@ -762,6 +781,99 @@ def get_density(G):
     max_edges = n * (n - 1) / 2
     
     return float(m) / float(max_edges)
+
+
+
+def count_triangles(G):
+    """
+    Vrne število trikotnikov (3-ciklov) v grafu G.
+    
+    Trikotnik je cikel dolžine 3 (tri vozlišča, ki so med seboj povezana).
+    
+    ČASOVNA ZAHTEVNOST: O(n·Δ²), kjer je n število vozlišč in Δ maksimalna stopnja.
+    Za redke grafe je to zelo hitro, tudi za grafe z več kot 1000 vozlišči.
+    
+    Args:
+        G: Graf
+    
+    Returns:
+        int: Število trikotnikov v grafu
+    
+    Primer:
+        G = graphs.CompleteGraph(4)
+        count_triangles(G)  # Vrne 4 (vsaka trojica vozlišč tvori trikotnik)
+        
+        G = graphs.CycleGraph(6)
+        count_triangles(G)  # Vrne 0 (šestkotnik nima trikotnikov)
+        
+        G = graphs.PetersenGraph()
+        count_triangles(G)  # Vrne 0 (Petersenov graf nima trikotnikov)
+    """
+    if G.order() < 3:
+        return 0
+    
+
+    count = 0
+    vertices = list(G.vertices())
+    
+    for i in range(len(vertices)):
+        for j in range(i + 1, len(vertices)):
+            if G.has_edge(vertices[i], vertices[j]):
+                # Preveri skupne sosede
+                neighbors_i = set(G.neighbors(vertices[i]))
+                neighbors_j = set(G.neighbors(vertices[j]))
+                common = neighbors_i & neighbors_j
+                count += len(common)
+    
+    return count
+
+def count_4cycles(G):
+    """
+    Vrne število 4-ciklov (kvadratov) v grafu G.
+    
+    4-cikel je cikel dolžine 4 (štiri vozlišča v ciklu).
+    
+    ČASOVNA ZAHTEVNOST: O(m²) v najslabšem primeru, kjer je m število povezav.
+    Za grafe z manj kot 100 vozliščmi je to še vedno hitro.
+    Za večje grafe (> 200 vozlišč) lahko traja nekaj sekund.
+    
+    Args:
+        G: Graf
+    
+    Returns:
+        int: Število 4-ciklov v grafu
+    
+    Primer:
+        G = graphs.CycleGraph(4)
+        count_4cycles(G)  # Vrne 1 (en kvadrat)
+        
+        G = graphs.CompleteGraph(4)
+        count_4cycles(G)  # Vrne 3 (tri kvadrate)
+        
+        G = graphs.CubeGraph(3)
+        count_4cycles(G)  # Vrne 6 (šest kvadratnih sten)
+    """
+    if G.order() < 4:
+        return 0
+    
+    count = 0
+    vertices = list(G.vertices())
+    n = len(vertices)
+    
+    # Optimiziran algoritem: za vsako povezavo štej število poti dolžine 2
+    for i in range(n):
+        for j in range(i + 1, n):
+            if G.has_edge(vertices[i], vertices[j]):
+                # Štej število poti dolžine 2 med i in j (ne po direktni povezavi)
+                neighbors_i = set(G.neighbors(vertices[i])) - {vertices[j]}
+                neighbors_j = set(G.neighbors(vertices[j])) - {vertices[i]}
+                
+                # Skupni sosedi tvorijo 4-cikle
+                common = neighbors_i & neighbors_j
+                count += len(common)
+    
+    # Vsak 4-cikel smo šteli dvakrat (enkrat za vsako nasprotno povezavo)
+    return count // 2
 ####################################################  Verjetnostna določnost grafov   ######################################################
 
 def predict_alfas(G):

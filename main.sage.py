@@ -154,9 +154,6 @@ def analyze_and_save_graphs(graphs, properties_file='data/grafi.csv', graphs_fil
         if 'alpha_od' not in results_dict[graf_ime] or results_dict[graf_ime].get('alpha_od') in ('', None):
             results_dict[graf_ime]['alpha_od'] = alpha_od_ilp_correct(G)
         
-        if "alpha_od_tilen" not in results_dict[graf_ime] or results_dict[graf_ime].get("alpha_od_tilen") in ('', None):
-            results_dict[graf_ime]["alpha_od_tilen"] = alpha_od_ilp_tilen(G)
-        
         if 'alpha^2' not in results_dict[graf_ime] or results_dict[graf_ime].get('alpha^2') in ('', None):
             results_dict[graf_ime]['alpha^2'] = graph_power(G, _sage_const_2 ).independent_set(value_only=True)
 
@@ -195,6 +192,16 @@ def analyze_and_save_graphs(graphs, properties_file='data/grafi.csv', graphs_fil
         
         if "gostota" not in results_dict[graf_ime] or results_dict[graf_ime].get("gostota") in ('', None):
             results_dict[graf_ime]["gostota"] = get_density(G)
+
+        if "regularen" not in results_dict[graf_ime] or results_dict[graf_ime].get("regularen") in ('', None):
+            results_dict[graf_ime]["regularen"] = G.is_regular()
+        
+        if "tricikli" not in results_dict[graf_ime] or results_dict[graf_ime].get("tricliki") in ('', None):
+            results_dict[graf_ime]["tricikli"] = count_triangles(G)
+        
+        if "stiricikli" not in results_dict[graf_ime] or results_dict[graf_ime].get("stiricikli") in ('', None):
+            results_dict[graf_ime]["stiricikli"] = count_4cycles(G)
+ 
 
         fieldnames_set.update(results_dict[graf_ime].keys())
     

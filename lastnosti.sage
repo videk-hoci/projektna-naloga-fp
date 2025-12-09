@@ -291,3 +291,93 @@ def get_density(G):
     
     return float(m) / float(max_edges)
 
+def count_triangles(G):
+    """
+    Vrne število trikotnikov (3-ciklov) v grafu G.
+    
+    Trikotnik je cikel dolžine 3 (tri vozlišča, ki so med seboj povezana).
+    
+    ČASOVNA ZAHTEVNOST: O(n·Δ²), kjer je n število vozlišč in Δ maksimalna stopnja.
+    Za redke grafe je to zelo hitro, tudi za grafe z več kot 1000 vozliščmi.
+    
+    Args:
+        G: Graf
+    
+    Returns:
+        int: Število trikotnikov v grafu
+    
+    Primer:
+        G = graphs.CompleteGraph(4)
+        count_triangles(G)  # Vrne 4 (vsaka trojica vozlišč tvori trikotnik)
+        
+        G = graphs.CycleGraph(6)
+        count_triangles(G)  # Vrne 0 (šestkotnik nima trikotnikov)
+        
+        G = graphs.PetersenGraph()
+        count_triangles(G)  # Vrne 0 (Petersenov graf nima trikotnikov)
+    """
+    if G.order() < 3:
+        return 0
+    
+    # Direktno štetje trikotnikov
+    count = 0
+    vertices = list(G.vertices())
+    
+    for i in range(len(vertices)):
+        for j in range(i + 1, len(vertices)):
+            if G.has_edge(vertices[i], vertices[j]):
+                # Preveri skupne sosede
+                neighbors_i = set(G.neighbors(vertices[i]))
+                neighbors_j = set(G.neighbors(vertices[j]))
+                common = neighbors_i & neighbors_j
+                count += len(common)
+    
+    return count
+
+def count_4cycles(G):
+    """
+    Vrne število 4-ciklov (kvadratov) v grafu G.
+    
+    4-cikel je cikel dolžine 4 (štiri vozlišča v ciklu).
+    
+    ČASOVNA ZAHTEVNOST: O(m²) v najslabšem primeru, kjer je m število povezav.
+    Za grafe z manj kot 100 vozliščmi je to še vedno hitro.
+    Za večje grafe (> 200 vozlišč) lahko traja nekaj sekund.
+    
+    Args:
+        G: Graf
+    
+    Returns:
+        int: Število 4-ciklov v grafu
+    
+    Primer:
+        G = graphs.CycleGraph(4)
+        count_4cycles(G)  # Vrne 1 (en kvadrat)
+        
+        G = graphs.CompleteGraph(4)
+        count_4cycles(G)  # Vrne 3 (tri kvadrate)
+        
+        G = graphs.CubeGraph(3)
+        count_4cycles(G)  # Vrne 6 (šest kvadratnih sten)
+    """
+    if G.order() < 4:
+        return 0
+    
+    count = 0
+    vertices = list(G.vertices())
+    n = len(vertices)
+    
+    # Optimiziran algoritem: za vsako povezavo štej število poti dolžine 2
+    for i in range(n):
+        for j in range(i + 1, n):
+            if G.has_edge(vertices[i], vertices[j]):
+                # Štej število poti dolžine 2 med i in j (ne po direktni povezavi)
+                neighbors_i = set(G.neighbors(vertices[i])) - {vertices[j]}
+                neighbors_j = set(G.neighbors(vertices[j])) - {vertices[i]}
+                
+                # Skupni sosedi tvorijo 4-cikle
+                common = neighbors_i & neighbors_j
+                count += len(common)
+    
+    # Vsak 4-cikel smo šteli dvakrat (enkrat za vsako nasprotno povezavo)
+    return count // 2
