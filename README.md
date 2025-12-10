@@ -28,6 +28,20 @@ $\alpha(G) = \binom{n-1}{n/2-1}, \quad \alpha_{\text{odd}}(G) = \alpha(G), \quad
 - Za $KG(n,k)$ velja: **premer** je 2, kadar je $n\ge 3k-1$. V tem primeru je $G^2$ poln graf, torej
   $\alpha(G^2)=1\quad \text{(za } n\ge 3k-1\text{)}.$
 
+#### Kartezični produkt polnih grafov
+
+#### Polni grafi
+
+#### Poti
+
+#### Cikli
+
+
+### Statistična analiza
+Iz neenakosti $\alpha(G) \geq \alpha_{\text{odd}}(G) \geq \alpha(G^2)$ sledi, da je $\alpha_{\text{odd}}(G)$ v primeru enakosti 
+$\alpha(G) = \alpha(G^2)$ tudi $\alpha_{\text{odd}}(G)$ obema enaka. Sedaj predpostaviva, da si nista enaki.
+
+Če je maksimalna stopnja vozlišča v grafu 2 sta $\alpha(G) = \alpha(G^2)$. Prav tako to velja za grafe, kjer je kromatično število za ena manjše od števila vozlišč.
 
 ### Trivialni zadostni pogoji
 Če je graf polni je alfa(G) = alfa_od(G) = alfa(G^2)
