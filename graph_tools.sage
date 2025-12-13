@@ -504,8 +504,9 @@ def generate_random_graphs(n, count=10, probability=0.5):
         # Generiraj 5 gostih grafov (80% povezav)
         dense_graphs = generate_random_graphs(10, count=5, probability=0.8)
     
-    Opomba: Vsak graf dobi unikatno ime v formatu "random_n_v_i", kjer je:
+    Opomba: Vsak graf dobi unikatno ime v formatu "{n}v_{m}e_{i}", kjer je:
             - n: število vozlišč
+            - m: število povezav
             - i: zaporedna številka grafa
     """
     result = []
@@ -517,8 +518,9 @@ def generate_random_graphs(n, count=10, probability=0.5):
         # Relabel vozlišča na števila od 0 do n-1
         G_relabeled = G.relabel(range(G.order()), inplace=False)
         
-        # Ustvari unikatno ime
-        ime = f"random_{n}v_{i}"
+        # Ustvari unikatno ime: {vozlišča}v_{povezave}e_{iteracija}
+        m = G_relabeled.size()  # število povezav
+        ime = f"{n}v_{m}e_{i}"
         
         result.append((G_relabeled, ime, "nakljucni"))
     
@@ -539,6 +541,10 @@ def generate_random_connected_graphs(n, count=10, probability=0.5):
     
     Opomba: Funkcija poskuša generirati povezane grafe. Če po 100 poskusih ne uspe
             generirati povezanega grafa, vrne kar zadnji poskus (ki morda ni povezan).
+            Ime grafa je v formatu "{n}v_{m}e_{i}", kjer je:
+            - n: število vozlišč
+            - m: število povezav
+            - i: zaporedna številka grafa
     """
     result = []
     
@@ -556,8 +562,9 @@ def generate_random_connected_graphs(n, count=10, probability=0.5):
         # Relabel vozlišča na števila od 0 do n-1
         G_relabeled = G.relabel(range(G.order()), inplace=False)
         
-        # Ustvari unikatno ime
-        ime = f"random_povezan_{n}v_{i}"
+        # Ustvari unikatno ime: {vozlišča}v_{povezave}e_{iteracija}
+        m = G_relabeled.size()  # število povezav
+        ime = f"{n}_{m}_{i}"
         
         result.append((G_relabeled, ime, "nakljucni_povezani"))
     
@@ -653,7 +660,7 @@ def get_girth(G):
 
 def get_radius(G):
     """
-    Vrne radij grafa G - najmanjšo ekscentričnost med vsemi vozlišči.
+    Vrne radij grafa G - najmanjšo ekscentričnost med vsemi vozlišti.
     
     Ekscentričnost vozlišča je največja razdalja od tega vozlišča do kateregakoli drugega.
     Za nepovezane grafe vrne float('inf').

@@ -1,6 +1,11 @@
 from sage.all import *
 import csv
+import sys
 import ast  # Varnejša alternativa za eval
+
+# Increase CSV field size limit
+csv.field_size_limit(sys.maxsize)
+
 load("graph_tools.sage")
 load("alpha_od.sage")
 
@@ -60,6 +65,24 @@ def save_graphs_to_csv(graphs, filename='data/grafi_oblika.csv'):
     
     return existing_graphs
 
+def has_missing_properties(row, ignore_fields=['druzina']):
+    """
+    Preveri, ali ima vrstica kakšne manjkajoče lastnosti (prazne ali None).
+    
+    Args:
+        row: Dictionary vrstice iz CSV
+        ignore_fields: Seznam polj, ki jih ignoriramo pri preverjanju
+    
+    Returns:
+        bool: True če ima manjkajoče lastnosti, False sicer
+    """
+    for key, value in row.items():
+        if key in ignore_fields or key == 'graf':
+            continue
+        if value in ('', None):
+            return True
+    return False
+
 # Funkcija za preverjanje lastnosti in shranjevanje
 def analyze_and_save_graphs(graphs, properties_file='data/grafi.csv', graphs_file='data/grafi_oblika.csv'):
     """Preveri lastnosti grafov in shrani rezultate v CSV datoteke"""
@@ -108,15 +131,34 @@ def analyze_and_save_graphs(graphs, properties_file='data/grafi.csv', graphs_fil
             G, ime, druzina = G_data, "", "neznan"
         graphs_dict[ime] = (G, druzina)
     
-    total_graphs = len(all_graphs)
+    # Identificiraj grafe, ki potrebujejo obdelavo:
+    # 1. Novi grafi (še niso v grafi.csv)
+    # 2. Grafi z manjkajočimi lastnostmi (prazna polja, razen 'druzina')
+    graphs_to_process = []
+    
+    for graf_ime in all_graphs.keys():
+        if graf_ime not in existing_properties:
+            # Nov graf
+            graphs_to_process.append(graf_ime)
+        elif has_missing_properties(existing_properties[graf_ime]):
+            # Obstoječ graf z manjkajočimi lastnostmi
+            graphs_to_process.append(graf_ime)
+    
+    total_to_process = len(graphs_to_process)
+    
+    if total_to_process == 0:
+        print("Ni grafov za obdelavo! Vsi grafi imajo že vse lastnosti.")
+        return
+    
+    print(f"Obdelujem {total_to_process} grafov (novi + manjkajoče lastnosti)...")
     processed = 0
     
-    # Obdelaj VSE grafe iz grafi_oblika.csv
-    for i, (graf_ime, graf_data) in enumerate(all_graphs.items()):
+    # Obdelaj samo grafe, ki potrebujejo obdelavo
+    for i, graf_ime in enumerate(graphs_to_process):
         processed += 1
         if processed % 10 == 0:
-            percentage = float(100 * processed) / float(total_graphs)
-            print(f"Obdelanih {processed}/{total_graphs} grafov ({percentage:.1f}%)")
+            percentage = float(100 * processed) / float(total_to_process)
+            print(f"Obdelanih {processed}/{total_to_process} grafov ({percentage:.1f}%)")
         
         # Če graf še ni v results_dict, dodaj osnovne podatke
         if graf_ime not in results_dict:
@@ -133,6 +175,7 @@ def analyze_and_save_graphs(graphs, properties_file='data/grafi.csv', graphs_fil
                     results_dict[graf_ime]['druzina'] = druzina
         else:
             # Rekonstruiraj graf iz vozlišč in povezav
+            graf_data = all_graphs[graf_ime]
             vertices = ast.literal_eval(graf_data['vozlisca'])
             edges = ast.literal_eval(graf_data['povezave'])
             
@@ -141,7 +184,7 @@ def analyze_and_save_graphs(graphs, properties_file='data/grafi.csv', graphs_fil
             G.add_vertices(vertices)
             G.add_edges(edges)
         
-        # Izračunaj lastnosti - optimizacija: preveri prazne in None vrednosti
+        # Izračunaj lastnosti - preveri prazne in None vrednosti
         if 'alpha' not in results_dict[graf_ime] or results_dict[graf_ime].get('alpha') in ('', None):
             results_dict[graf_ime]['alpha'] = G.independent_set(value_only=True)
         
@@ -190,12 +233,11 @@ def analyze_and_save_graphs(graphs, properties_file='data/grafi.csv', graphs_fil
         if "regularen" not in results_dict[graf_ime] or results_dict[graf_ime].get("regularen") in ('', None):
             results_dict[graf_ime]["regularen"] = G.is_regular()
         
-        if "tricikli" not in results_dict[graf_ime] or results_dict[graf_ime].get("tricliki") in ('', None):
+        if "tricikli" not in results_dict[graf_ime] or results_dict[graf_ime].get("tricikli") in ('', None):
             results_dict[graf_ime]["tricikli"] = count_triangles(G)
         
         if "stiricikli" not in results_dict[graf_ime] or results_dict[graf_ime].get("stiricikli") in ('', None):
             results_dict[graf_ime]["stiricikli"] = count_4cycles(G)
- 
 
         fieldnames_set.update(results_dict[graf_ime].keys())
     
@@ -226,6 +268,8 @@ def analyze_and_save_graphs(graphs, properties_file='data/grafi.csv', graphs_fil
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(results)
+    
+    print(f"✓ Končano! Obdelanih {total_to_process} grafov.")
 
 
 # Primer uporabe:
@@ -233,5 +277,5 @@ def analyze_and_save_graphs(graphs, properties_file='data/grafi.csv', graphs_fil
 # povezave = [(0,1),(1,2),...]
 # graphs = [(povezave, "Graph_Name", "family_name"), ]
 
-graphs = generate_all_graphs_up_to_n(7)
+graphs = generate_random_connected_graphs(10,1000,0.5)
 analyze_and_save_graphs(graphs)
