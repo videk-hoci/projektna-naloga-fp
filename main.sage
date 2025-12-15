@@ -7,7 +7,7 @@ import ast  # Varnejša alternativa za eval
 csv.field_size_limit(sys.maxsize)
 
 load("graph_tools.sage")
-load("alpha_od.sage")
+load("prediction_model.sage")
 
 # Funkcija za pretvorbo grafa v string povezav
 def graph_to_edge_string(G):
@@ -277,5 +277,23 @@ def analyze_and_save_graphs(graphs, properties_file='data/grafi.csv', graphs_fil
 # povezave = [(0,1),(1,2),...]
 # graphs = [(povezave, "Graph_Name", "family_name"), ]
 
-graphs = generate_random_connected_graphs(10,1000,0.5)
-analyze_and_save_graphs(graphs)
+# Generate random graphs
+graphs = generate_random_connected_graphs(30, 5, 0.8)
+
+# Process each graph individually with predict_alfas
+print(f"Processing {len(graphs)} graphs...")
+for i, G_data in enumerate(graphs):
+    print(f"\n{'='*60}")
+    print(f"Processing graph {i+1}/{len(graphs)}")
+    print(f"{'='*60}")
+    
+    # Extract graph from tuple (G, name, family)
+    if isinstance(G_data, tuple):
+        G = G_data[0]  # First element is the graph
+    else:
+        G = G_data  # In case it's already just a graph
+    
+    predict_alfas(G)
+
+# Alternative: use the batch processing function
+# analyze_and_save_graphs(graphs)

@@ -703,5 +703,3 @@ def predict_alfas(G):
         })
     
     print(f"✓ Rezultati shranjeni za {graf_id}")
-    print(f"  Napoved α(G)=α_od(G): {predicted_alpha_equals_alpha_od}, Dejanska vrednost: {actual_alpha_equals_alpha_od}")
-    print(f"  Napoved α(G²)=α_od(G): {predicted_alpha_G2_equals_alpha_od}, Dejanska vrednost: {actual_alpha_G2_equals_alpha_od}")
