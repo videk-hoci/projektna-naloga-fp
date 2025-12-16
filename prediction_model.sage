@@ -6,6 +6,7 @@ from sage.all import *
 
 # Import functions from graph_tools
 load('graph_tools.sage')
+load('alpha_od.sage')
 
 # Try to import Orange - handle gracefully if not available
 ORANGE_AVAILABLE = False

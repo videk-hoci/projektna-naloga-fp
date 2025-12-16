@@ -278,7 +278,7 @@ def analyze_and_save_graphs(graphs, properties_file='data/grafi.csv', graphs_fil
 # graphs = [(povezave, "Graph_Name", "family_name"), ]
 
 # Generate random graphs
-graphs = generate_random_connected_graphs(30, 5, 0.8)
+graphs = generate_random_connected_graphs(25, 10, 0.9)
 
 # Process each graph individually with predict_alfas
 print(f"Processing {len(graphs)} graphs...")
