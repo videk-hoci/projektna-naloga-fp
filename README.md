@@ -4,8 +4,8 @@
 
 Najini osrednji raziskovalni vprašanji sta bili:
 
-1. Kateri grafi G zadostijo enakosti $\alpha_{\text{od}}(G) = \alpha(G)$
-2. Kateri grafi G zadostijo enakosti $\alpha_{\text{od}}(G) = \alpha(G^2)$
+1. Kateri grafi $G$ zadostijo enakosti **$\alpha_{\text{od}}(G) = \alpha(G)$**
+2. Kateri grafi $G$ zadostijo enakosti **$\alpha_{\text{od}}(G) = \alpha(G^2)$**
 
 ## Povzetek
 
