@@ -4,6 +4,12 @@
 
 Naj bo $G = (V,E)$ enostaven, neusmerjen graf.
 
+**Neodvisna množica** v $G$ je množica vozlišč $S \subseteq V$, pri kateri nobeni dve vozlišči nista povezani:
+
+$$\forall u, v \in S : uv \notin E.$$
+
+Moč največje take množice se imenuje **neodvisno število** grafa $G$ in se označuje z $\alpha(G)$.
+
 **Liha neodvisna množica** v grafu $G$ je neodvisna množica $T \subseteq V$, za katero za vsako vozlišče $v \in V \setminus T$ velja:
 
 $$|N(v) \cap T| \equiv 1 \pmod{2} \quad \text{ali} \quad |N(v) \cap T| = 0,$$
