@@ -1,5 +1,20 @@
 # Odd independent number vs. usual independent number
 
+## Uvod
+
+Naj bo $G = (V,E)$ enostaven, neusmerjen graf.
+
+**Liha neodvisna množica** v grafu $G$ je neodvisna množica $T \subseteq V$, za katero za vsako vozlišče $v \in V \setminus T$ velja:
+
+$$|N(v) \cap T| \equiv 1 \pmod{2} \quad \text{ali} \quad |N(v) \cap T| = 0,$$
+
+kjer $N(v)$ označuje sosedna vozlišča od $v$.
+Moč največje take množice se imenuje **liho neodvisno število** grafa $G$ in se označuje z $\alpha_{od}(G)$.
+
+
+**Kvadrat grafa $G^2$** ima isto množico vozlišč kot $G$, 
+pri čemer sta dve vozlišči povezani natanko tedaj, ko je v $G$ med njima pot dolžine 1 ali 2.
+
 ## Opis problema
 
 Najini osrednji raziskovalni vprašanji sta bili:
