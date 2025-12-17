@@ -1,0 +1,17 @@
+n,k,alpha_formula,alpha,alpha_odd,alpha_squared,alpha_od_eq_alpha,alpha_od_eq_alpha_squared,premer,min_stopnja,max_stopnja,neparna_stopnja,obseg,radij,kromaticno_st,gostota,dvodelen,drevo,gozd,Eulerjev,regularen,st_trikotnikov,st_kvadratov
+2,1,1,1,1,1,True,True,1.0,1,1,True,inf,1.0,2,1.0,True,True,True,False,True,0,0
+3,1,1,1,1,1,True,True,1.0,2,2,False,3,1.0,3,1.0,False,False,False,True,True,3,0
+4,1,1,1,1,1,True,True,1.0,3,3,True,3,1.0,4,1.0,False,False,False,False,True,12,6
+4,2,3,3,3,3,True,True,inf,1,1,True,+Infinity,inf,2,0.2,True,False,True,False,True,0,0
+5,1,1,1,1,1,True,True,1.0,4,4,False,3,1.0,5,1.0,False,False,False,True,True,30,15
+5,2,4,4,3,1,False,False,2.0,3,3,True,5,2.0,3,0.3333333333333333,False,False,False,False,True,0,0
+6,1,1,1,1,1,True,True,1.0,5,5,True,3,1.0,6,1.0,False,False,False,False,True,60,30
+6,2,5,5,5,1,True,False,2.0,6,6,False,3,2.0,4,0.42857142857142855,False,False,False,True,True,45,22
+6,3,10,10,10,10,True,True,inf,1,1,True,+Infinity,inf,2,0.05263157894736842,True,False,True,False,True,0,0
+7,1,1,1,1,1,True,True,1.0,6,6,False,3,1.0,7,1.0,False,False,False,True,True,105,52
+7,2,6,6,3,1,False,False,2.0,10,10,False,3,2.0,5,0.5,False,False,False,True,True,315,157
+7,3,15,15,15,7,True,False,3.0,4,4,False,6,3.0,3,0.11764705882352941,False,False,False,True,True,0,0
+8,1,1,1,1,1,True,True,1.0,7,7,True,3,1.0,8,1.0,False,False,False,False,True,168,84
+8,2,7,7,7,1,True,False,2.0,15,15,True,3,2.0,6,0.5555555555555556,False,False,False,False,True,1260,630
+8,3,21,21,,1,False,False,2.0,10,10,False,4,2.0,4,0.18181818181818182,False,False,False,True,True,0,0
+8,4,35,35,,35,False,True,inf,1,1,True,+Infinity,inf,2,0.014492753623188406,True,False,True,False,True,0,0
