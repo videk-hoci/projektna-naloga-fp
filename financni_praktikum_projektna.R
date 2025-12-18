@@ -3,7 +3,7 @@ library(tidyverse)
 library(rvest)
 library(stringr)
 
-data <- read_csv("grafi.csv") %>%
+data <- read_csv("data/grafi.csv") %>%
   mutate(obseg = str_replace(obseg,"\\+Infinity", "Inf")) %>%
   rename(alpha_kvadrat = "alpha^2") %>%
   filter(alpha_kvadrat != alpha) %>%
@@ -22,3 +22,4 @@ enakost1 <- data[data$alpha_od == data$alpha_kvadrat,] %>%
 write.csv(data, "vsi_podatki.csv", row.names = FALSE)
 write.csv(alpha,"alpha.csv", row.names = FALSE)
 write.csv(alpha_kvadrat,"alpha_kvadrat.csv", row.names = FALSE)
+
